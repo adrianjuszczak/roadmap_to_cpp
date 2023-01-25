@@ -8,14 +8,18 @@ namespace anjk
     template <typename T>
     struct unique_ptr
     {
-        unique_ptr() = default;
-        unique_ptr(T *pointer)
+        /**
+         *  unique_ptr never allocates any resources that's why is noexcept
+         */
+        unique_ptr() noexcept : m_pointer{nullptr} {}
+        ~unique_ptr() { delete m_pointer; }
+        /*
+            CTOR is explicit because taking ownership  is important and 
+            should be done inntentionaly.
+            Compiler can use constructor with one param in order to convert one type to another.
+        */
+        unique_ptr(T *pointer) 
             : m_pointer{pointer} {}
-        ~unique_ptr()
-        {
-            if (m_pointer)
-                delete m_pointer;
-        }
         /**
          *  @brief Due to fact that move CTOR and move assignment operator is declared
          *  I could have removed copy CTOR and copy assignment operator
@@ -56,12 +60,24 @@ namespace anjk
          */
         void reset(T *pointer)
         {
+            T *old_pointer = m_pointer;
 
-            T *old_ptr = m_pointer;
-            std::swap(m_pointer, pointer);
+            using std::swap;
+            swap(this->m_pointer, pointer);
 
-            if (old_ptr != nullptr)
-                delete old_ptr;
+            if (old_pointer != nullptr)
+                delete old_pointer;
+        }
+        
+        /**
+         *  It is your responsibiliti not to leave
+         *  dangling pointer.
+        */
+        T* release() noexcept {
+            T* old_pointer = m_pointer;
+            m_pointer = nullptr;
+
+            return old_pointer;
         }
 
         T *get() const
@@ -76,7 +92,7 @@ namespace anjk
 
         T &operator*() const noexcept
         {
-            return m_pointer;
+            return *m_pointer;
         }
 
         bool operator!=(unique_ptr const &) const
@@ -93,6 +109,7 @@ namespace anjk
         T *m_pointer;
     };
 }
+
 
 struct Test
 {
