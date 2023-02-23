@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <utility>
-
+#include <boost/scoped_ptr.hpp>
 namespace anjk
 {
     template <typename T>
@@ -14,11 +14,11 @@ namespace anjk
         unique_ptr() noexcept : m_pointer{nullptr} {}
         ~unique_ptr() { delete m_pointer; }
         /*
-            CTOR is explicit because taking ownership  is important and 
+            CTOR is explicit because taking ownership  is important and
             should be done inntentionaly.
             Compiler can use constructor with one param in order to convert one type to another.
         */
-        unique_ptr(T *pointer) 
+        unique_ptr(T *pointer)
             : m_pointer{pointer} {}
         /**
          *  @brief Due to fact that move CTOR and move assignment operator is declared
@@ -68,13 +68,14 @@ namespace anjk
             if (old_pointer != nullptr)
                 delete old_pointer;
         }
-        
+
         /**
          *  It is your responsibiliti not to leave
          *  dangling pointer.
-        */
-        T* release() noexcept {
-            T* old_pointer = m_pointer;
+         */
+        T *release() noexcept
+        {
+            T *old_pointer = m_pointer;
             m_pointer = nullptr;
 
             return old_pointer;
@@ -108,8 +109,14 @@ namespace anjk
     private:
         T *m_pointer;
     };
-}
 
+    template <class T>
+    anjk::unique_ptr<T> make_unique()
+    {
+        return anjk::unique_ptr<T>(new T());
+    }
+
+}
 
 struct Test
 {
@@ -131,7 +138,10 @@ int main(void)
 
         if (ptr_2 != nullptr)
             std::cout << "ptr_2 != nullptr \n";
-    }
+
+        auto ptr2 = anjk::make_unique<Test>();
+        ptr2->foo();
+        }
     catch (const std::exception &e)
     {
         std::cerr << e.what() << "\n";
